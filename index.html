@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base64 Cyber Terminal // Encoder & Decoder</title>
+<link rel="preconnect" href="https://googleapis.com">
+<link rel="preconnect" href="https://gstatic.com" crossorigin>
+<link href="https://googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --bg-void: #04070d;
+    --bg-panel: rgba(9, 16, 28, 0.88);
+    --bg-input: #050a14;
+    --cyan: #00f3ff;
+    --cyan-dim: rgba(0, 243, 255, 0.22);
+    --cyan-glow: rgba(0, 243, 255, 0.45);
+    --emerald: #00ff9d;
+    --emerald-dim: rgba(0, 255, 157, 0.25);
+    --crimson: #ff2a5f;
+    --crimson-dim: rgba(255, 42, 95, 0.25);
+    --text-main: #e2f5ff;
+    --text-muted: #698ba6;
+}
+
+/* Stealth Mode (Subtle Glow) */
+body.stealth {
+    --cyan-glow: rgba(0, 243, 255, 0.12);
+    --cyan-dim: rgba(0, 243, 255, 0.15);
+    --bg-panel: rgba(8, 12, 20, 0.96);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Rajdhani', sans-serif;
+    background-color: var(--bg-void);
+    background-image: 
+        radial-gradient(circle at 50% 0%, rgba(0, 243, 255, 0.12) 0%, transparent 60%),
+        linear-gradient(rgba(0, 243, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 243, 255, 0.04) 1px, transparent 1px);
+    background-size: 100% 100%, 32px 32px, 32px 32px;
+    margin: 0;
+    padding: 28px 16px;
+    color: var(--text-main);
+    min-height: 100vh;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-void);
+}
+::-webkit-scrollbar-thumb {
+    background: #14364a;
+    border: 1px solid var(--cyan);
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--cyan);
+}
+
+.container {
+    max-width: 880px;
+    margin: auto;
+    background: var(--bg-panel);
+    backdrop-filter: blur(12px);
+    padding: 32px;
+    border: 1px solid var(--cyan);
+    box-shadow: 0 0 28px var(--cyan-dim), inset 0 0 20px rgba(0, 243, 255, 0.05);
+    position: relative;
+    clip-path: polygon(
+        0 18px, 18px 0, 
+        calc(100% - 18px) 0, 100% 18px, 
+        100% calc(100% - 18px), calc(100% - 18px) 100%, 
+        18px 100%, 0 calc(100% - 18px)
+    );
+}
+
+/* Top Status Bar */
+.hud-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Fira Code', monospace;
+    font-size: 11px;
+    color: var(--cyan);
+    border-bottom: 1px solid var(--cyan-dim);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--cyan);
+    border-radius: 50%;
+    margin-right: 6px;
+    box-shadow: 0 0 8px var(--cyan);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+
+h1 {
+    font-family: 'Orbitron', sans-serif;
+    text-align: center;
+    color: var(--cyan);
+    font-size: 1.85rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin: 0 0 6px;
+    text-shadow: 0 0 14px var(--cyan-glow);
+}
+
+p.subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    font-family: 'Fira Code', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 0 0 24px;
+}
+
+label {
+    display: flex;
+    align-items: center;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin: 22px 0 8px;
+}
+
+label::before {
+    content: "// ";
+    color: var(--text-muted);
+    margin-right: 6px;
+}
+
+textarea, select {
+    width: 100%;
+    padding: 14px;
+    background: var(--bg-input);
+    color: var(--text-main);
+    border: 1px solid #163b50;
+    border-radius: 2px;
+    font-family: 'Fira Code', monospace;
+    font-size: 14px;
+    transition: all 0.25s ease;
+    outline: none;
+}
+
+textarea:focus, select:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 14px var(--cyan-dim), inset 0 0 8px rgba(0, 243, 255, 0.08);
+}
+
+textarea::placeholder {
+    color: #365269;
+}
+
+textarea {
+    min-height: 115px;
+    resize: vertical;
+}
+
+textarea[readonly] {
+    border-color: #133345;
+    background: #03070e;
+    color: var(--cyan);
+}
+
+select {
+    cursor: pointer;
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--cyan) 50%),
+                      linear-gradient(135deg, var(--cyan) 50%, transparent 50%);
+    background-position: calc(100% - 20px) calc(1em + 2px), calc(100% - 15px) calc(1em + 2px);
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+}
+
+select option {
+    background: #070e1a;
+    color: var(--text-main);
+}
+
+.info {
+    background: rgba(0, 243, 255, 0.05);
+    border: 1px solid var(--cyan-dim);
+    border-left: 4px solid var(--cyan);
+    padding: 12px 16px;
+    margin-top: 16px;
+    position: relative;
+}
+
+.info strong {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.info p {
+    margin: 0;
+    font-size: 1rem;
+    color: #b7d7eb;
+}
+
+.btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+button {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    background: rgba(0, 243, 255, 0.08);
+    color: var(--cyan);
+    border: 1px solid var(--cyan);
+    padding: 12px 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+button:hover {
+    background: var(--cyan);
+    color: #03070e;
+    box-shadow: 0 0 18px var(--cyan-glow);
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* Primary Run / Copy Button (Electric Emerald) */
+button.green {
+    background: rgba(0, 255, 157, 0.1);
+    color: var(--emerald);
+    border-color: var(--emerald);
+}
+button.green:hover {
+    background: var(--emerald);
+    color: #03070e;
+    box-shadow: 0 0 18px var(--emerald-dim);
+}
+
+/* Clear Button (Cyber Crimson) */
+button.red {
+    background: rgba(255, 42, 95, 0.1);
+    color: var(--crimson);
+    border-color: var(--crimson);
+}
+button.red:hover {
+    background: var(--crimson);
+    color: #fff;
+    box-shadow: 0 0 18px var(--crimson-dim);
+}
+
+/* Utility Buttons (Swap / Stealth Mode) */
+button.gray {
+    background: rgba(105, 139, 166, 0.1);
+    color: #9ec2de;
+    border-color: #365975;
+}
+button.gray:hover {
+    background: #9ec2de;
+    color: #03070e;
+    border-color: #9ec2de;
+    box-shadow: 0 0 14px rgba(158, 194, 222, 0.35);
+}
+
+.counter {
+    text-align: right;
+    color: var(--text-muted);
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+#message {
+    margin-top: 16px;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.9rem;
+    min-height: 24px;
+    padding: 6px 10px;
+    border-left: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.footer {
+    text-align: center;
+    color: var(--text-muted);
+    font-family: 'Fira Code', monospace;
+    margin-top: 28px;
+    padding-top: 14px;
+    border-top: 1px solid var(--cyan-dim);
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+@media(max-width:600px) {
+    body { padding: 12px 8px; }
+    .container { padding: 20px 16px; }
+    h1 { font-size: 1.35rem; }
+    button { flex: 1 1 auto; text-align: center; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="hud-bar">
+    <span><span class="status-dot"></span>SYS.ONLINE // CIPHER_CORE</span>
+    <span>ENC_MODULES: 25</span>
+</div>
+
+<h1>Base64 Encoder & Decoder</h1>
+<p class="subtitle">[ Simple Advanced Algorithm Project ]</p>
+
+<label for="input">Input Data Stream</label>
+<textarea id="input" placeholder="> Enter plaintext, binary, hex, or Base64 payload..."></textarea>
+<div class="counter" id="inputCount">Characters: 0 | Bytes: 0</div>
+
+<label for="algorithm">Select Algorithm Module</label>
+<select id="algorithm">
+<option value="encode">01 // Base64 Encoding</option>
+<option value="decode">02 // Base64 Decoding</option>
+<option value="utf8encode">03 // UTF-8 Encoding</option>
+<option value="utf8decode">04 // UTF-8 Decoding</option>
+<option value="ascii">05 // ASCII Conversion</option>
+<option value="binarydecimal">06 // Binary to Decimal</option>
+<option value="decimalbinary">07 // Decimal to Binary</option>
+<option value="binarybase64">08 // Binary to Base64</option>
+<option value="base64binary">09 // Base64 to Binary</option>
+<option value="urlencode">10 // URL-Safe Base64</option>
+<option value="padding">11 // Base64 Padding</option>
+<option value="removepad">12 // Padding Removal</option>
+<option value="chartobyte">13 // Character to Byte</option>
+<option value="bytetchar">14 // Byte to Character</option>
+<option value="hextobinary">15 // Hexadecimal to Binary</option>
+<option value="binarytohex">16 // Binary to Hexadecimal</option>
+<option value="hextodecimal">17 // Hexadecimal to Decimal</option>
+<option value="decimaltohex">18 // Decimal to Hexadecimal</option>
+<option value="validate">19 // Input Validation</option>
+<option value="basevalidate">20 // Base64 Character Validation</option>
+<option value="lengthvalidate">21 // Base64 Length Validation</option>
+<option value="unicode">22 // Unicode Conversion</option>
+<option value="reverse">23 // String Reversal</option>
+<option value="count">24 // Character Counting</option>
+<option value="checksum">25 // Checksum Calculation</option>
+</select>
+
+<div class="info">
+<strong>Module Specification</strong>
+<p id="description">Converts normal text into Base64.</p>
+</div>
+
+<div class="btn-group">
+    <button class="green" onclick="processData()">▶ Execute</button>
+    <button onclick="swapData()">⇄ Swap</button>
+    <button class="gray" onclick="toggleStealth()">Stealth Mode</button>
+    <button class="red" onclick="clearAll()">Clear All</button>
+</div>
+
+<label for="output">Output Data Stream</label>
+<textarea id="output" placeholder="> Processed output will appear here..." readonly></textarea>
+
+<div class="counter" id="outputCount">Characters: 0 | Bytes: 0</div>
+
+<div class="btn-group">
+    <button class="green" onclick="copyOutput()">Copy Output</button>
+</div>
+
+<div id="message"></div>
+
+<div class="footer">
+    BASE64 CYBER TERMINAL // 25 ALGORITHM MODULES // SYSTEM READY
+</div>
+
+</div>
+
+<script>
+const input = document.getElementById("input");
+const output = document.getElementById("output");
+const algorithm = document.getElementById("algorithm");
+const description = document.getElementById("description");
+const message = document.getElementById("message");
+
+const descriptions = {
+    encode: "Converts normal text into Base64.",
+    decode: "Decodes Base64 into normal text.",
+    utf8encode: "Converts text into UTF-8 byte values.",
+    utf8decode: "Converts UTF-8 byte values into text.",
+    ascii: "Displays ASCII values of characters.",
+    binarydecimal: "Converts binary numbers into decimal.",
+    decimalbinary: "Converts decimal numbers into binary.",
+    binarybase64: "Converts binary data into Base64.",
+    base64binary: "Converts Base64 data into binary.",
+    urlencode: "Creates URL-safe Base64 output.",
+    padding: "Adds required Base64 padding.",
+    removepad: "Removes Base64 padding.",
+    chartobyte: "Converts characters into byte values.",
+    bytetchar: "Converts byte values into characters.",
+    hextobinary: "Converts hexadecimal into binary.",
+    binarytohex: "Converts binary into hexadecimal.",
+    hextodecimal: "Converts hexadecimal into decimal.",
+    decimaltohex: "Converts decimal into hexadecimal.",
+    validate: "Checks the input data.",
+    basevalidate: "Checks valid Base64 characters.",
+    lengthvalidate: "Checks Base64 length.",
+    unicode: "Displays Unicode code points.",
+    reverse: "Reverses the input string.",
+    count: "Counts characters in the input.",
+    checksum: "Calculates a simple checksum."
+};
+
+algorithm.addEventListener("change", function() {
+    description.textContent = descriptions[this.value];
+});
+
+function showMessage(text, success = true) {
+    message.textContent = "> " + text;
+    message.style.color = success ? "#00ff9d" : "#ff2a5f";
+    message.style.borderLeftColor = success ? "#00ff9d" : "#ff2a5f";
+}
+
+function updateCounters() {
+    const bytes = new TextEncoder().encode(input.value).length;
+    document.getElementById("inputCount").textContent =
+        `Characters: ${input.value.length} | Bytes: ${bytes}`;
+
+    const outBytes = new TextEncoder().encode(output.value).length;
+    document.getElementById("outputCount").textContent =
+        `Characters: ${output.value.length} | Bytes: ${outBytes}`;
+}
+
+input.addEventListener("input", updateCounters);
+
+function processData() {
+    const text = input.value;
+    const selected = algorithm.value;
+
+    try {
+        let result = "";
+
+        switch(selected) {
+
+            case "encode":
+                result = btoa(unescape(encodeURIComponent(text)));
+                break;
+
+            case "decode":
+                result = decodeURIComponent(escape(atob(text.trim())));
+                break;
+
+            case "utf8encode":
+                result = Array.from(new TextEncoder().encode(text)).join(" ");
+                break;
+
+            case "utf8decode":
+                result = new TextDecoder("utf-8", {fatal:true})
+                    .decode(new Uint8Array(text.trim().split(/\s+/).map(Number)));
+                break;
+
+            case "ascii":
+                result = Array.from(text).map(c => c.codePointAt(0)).join(" ");
+                break;
+
+            case "binarydecimal":
+                if (!/^[01]+$/.test(text.trim())) throw Error("Enter valid binary.");
+                result = parseInt(text.trim(), 2).toString(10);
+                break;
+
+            case "decimalbinary":
+                if (!/^\d+$/.test(text.trim())) throw Error("Enter a valid decimal number.");
+                result = BigInt(text.trim()).toString(2);
+                break;
+
+            case "binarybase64":
+                if (!/^[01]*$/.test(text.trim())) throw Error("Invalid binary input.");
+                if (text.trim().length % 8 !== 0) throw Error("Binary length must be a multiple of 8.");
+                result = btoa(String.fromCharCode(...(text.trim().match(/.{8}/g) || []).map(b => parseInt(b, 2))));
+                break;
+
+            case "base64binary":
+                {
+                    const decoded = atob(text.trim());
+                    result = Array.from(decoded)
+                        .map(c => c.charCodeAt(0).toString(2).padStart(8, "0"))
+                        .join(" ");
+                }
+                break;
+
+            case "urlencode":
+                result = btoa(unescape(encodeURIComponent(text)))
+                    .replace(/\+/g, "-")
+                    .replace(/\//g, "_")
+                    .replace(/=+$/, "");
+                break;
+
+            case "padding":
+                {
+                    let clean = text.trim();
+                    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(clean)) throw Error("Invalid Base64 characters.");
+                    clean = clean.replace(/=+$/, "");
+                    while(clean.length % 4 !== 0) clean += "=";
+                    result = clean;
+                }
+                break;
+
+            case "removepad":
+                result = text.trim().replace(/=+$/, "");
+                break;
+
+            case "chartobyte":
+                result = Array.from(new TextEncoder().encode(text)).join(" ");
+                break;
+
+            case "bytetchar":
+                {
+                    const nums = text.trim().split(/\s+/).map(Number);
+                    if (!nums.every(n => Number.isInteger(n) && n >= 0 && n <= 255))
+                        throw Error("Enter byte values from 0 to 255.");
+                    result = new TextDecoder("utf-8", {fatal:true}).decode(new Uint8Array(nums));
+                }
+                break;
+
+            case "hextobinary":
+                {
+                    const hex = text.trim().replace(/\s+/g, "");
+                    if (!/^[0-9a-fA-F]+$/.test(hex)) throw Error("Invalid hexadecimal.");
+                    result = hex.split("").map(c =>
+                        parseInt(c, 16).toString(2).padStart(4, "0")
+                    ).join(" ");
+                }
+                break;
+
+            case "binarytohex":
+                if (!/^[01]+$/.test(text.trim())) throw Error("Invalid binary.");
+                if (text.trim().length % 4 !== 0) throw Error("Binary length must be divisible by 4.");
+                result = text.trim().match(/.{4}/g)
+                    .map(b => parseInt(b, 2).toString(16).toUpperCase()).join("");
+                break;
+
+            case "hextodecimal":
+                if (!/^[0-9a-fA-F]+$/.test(text.trim())) throw Error("Invalid hexadecimal.");
+                result = BigInt("0x" + text.trim()).toString(10);
+                break;
+
+            case "decimaltohex":
+                if (!/^\d+$/.test(text.trim())) throw Error("Invalid decimal.");
+                result = BigInt(text.trim()).toString(16).toUpperCase();
+                break;
+
+            case "validate":
+                result = text.length > 0
+                    ? "VALID: Input data is available."
+                    : "INVALID: Input is empty.";
+                break;
+
+            case "basevalidate":
+                result = /^[A-Za-z0-9+/]*={0,2}$/.test(text.trim())
+                    ? "VALID: Only Base64 characters found."
+                    : "INVALID: Unsupported Base64 characters.";
+                break;
+
+            case "lengthvalidate":
+                result = text.trim().length % 4 === 0
+                    ? "VALID: Base64 length is divisible by 4."
+                    : "INVALID: Base64 length is not divisible by 4.";
+                break;
+
+            case "unicode":
+                result = Array.from(text).map(c =>
+                    "U+" + c.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")
+                ).join(" ");
+                break;
+
+            case "reverse":
+                result = Array.from(text).reverse().join("");
+                break;
+
+            case "count":
+                result =
+                    "Characters: " + text.length +
+                    "\nBytes: " + new TextEncoder().encode(text).length +
+                    "\nWords: " + (text.trim() ? text.trim().split(/\s+/).length : 0) +
+                    "\nSpaces: " + (text.match(/ /g) || []).length +
+                    "\nLines: " + (text ? text.split("\n").length : 0);
+                break;
+
+            case "checksum":
+                {
+                    let sum = 0;
+                    for (let i = 0; i < text.length; i++) {
+                        sum = (sum + text.charCodeAt(i)) % 65536;
+                    }
+                    result = "Checksum (16-bit): " + sum +
+                        "\nHexadecimal: " + sum.toString(16).toUpperCase().padStart(4, "0");
+                }
+                break;
+
+            default:
+                throw Error("Unknown algorithm.");
+        }
+
+        output.value = result;
+        updateCounters();
+        showMessage("Operation completed successfully.");
+
+    } catch(error) {
+        output.value = "";
+        updateCounters();
+        showMessage(error.message || "Processing error.", false);
+    }
+}
+
+function copyOutput() {
+    if (!output.value) {
+        showMessage("Nothing to copy.", false);
+        return;
+    }
+
+    navigator.clipboard.writeText(output.value)
+        .then(() => showMessage("Output copied successfully."))
+        .catch(() => showMessage("Clipboard access unavailable.", false));
+}
+
+function clearAll() {
+    input.value = "";
+    output.value = "";
+    updateCounters();
+    showMessage("All fields cleared.");
+}
+
+function swapData() {
+    const temp = input.value;
+    input.value = output.value;
+    output.value = temp;
+    updateCounters();
+    showMessage("Input and output swapped.");
+}
+
+function toggleStealth() {
+    document.body.classList.toggle("stealth");
+    showMessage(
+        document.body.classList.contains("stealth")
+            ? "Stealth mode activated."
+            : "Stealth mode deactivated."
+    );
+}
+
+updateCounters();
+</script>
+
+</body>
+</html>
